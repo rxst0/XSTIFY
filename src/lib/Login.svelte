@@ -37,7 +37,7 @@
 </div>
 
 <style>
-  .wrap { height: 100vh; display: grid; place-items: center; padding: 16px; }
+  .wrap { height: 100%; display: grid; place-items: center; padding: 16px; }
   .box { width: 100%; max-width: 460px; background: var(--surface); border-radius: 12px; padding: 32px; display: grid; gap: 14px; }
   .brand { font-weight: 800; letter-spacing: 0.12em; color: var(--accent); }
   h1 { font-size: 24px; margin: 0; }

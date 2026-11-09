@@ -74,4 +74,6 @@ export function applyTheme({ main, accent }: Theme) {
   const root = document.documentElement;
   for (const [k, v] of Object.entries(vars)) root.style.setProperty(k, v);
   root.style.colorScheme = light ? "light" : "dark";
+  // Lets the title bar recolor the taskbar icon.
+  window.dispatchEvent(new CustomEvent("xstify-theme", { detail: accent }));
 }

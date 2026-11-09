@@ -16,7 +16,6 @@
 </script>
 
 <aside>
-  <div class="brand">XSTIFY</div>
   <UpdateButton />
   <nav>
     <button class:on={isView("search")} onclick={() => nav.go({ name: "search" })}><Icon name="search" /> Search</button>
@@ -36,7 +35,6 @@
 
 <style>
   aside { background: var(--surface); border-radius: 10px; display: flex; flex-direction: column; min-height: 0; padding: 16px 8px 8px; }
-  .brand { font-weight: 800; letter-spacing: 0.12em; padding: 0 12px 14px; color: var(--accent); }
   nav { display: grid; gap: 2px; }
   button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 12px; border-radius: 6px; color: var(--muted); font-weight: 600; text-align: left; }
   button:hover { color: var(--text); background: var(--hover); }

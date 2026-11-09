@@ -102,8 +102,8 @@
 {#if toast.msg}<div class="toast" role="status">{toast.msg}</div>{/if}
 
 <style>
-  .splash { height: 100vh; display: grid; place-items: center; font-weight: 800; letter-spacing: 0.2em; color: var(--accent); }
-  .app { height: 100vh; display: grid; grid-template-columns: 260px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; gap: 8px; padding: 8px 8px 0; }
+  .splash { height: 100%; display: grid; place-items: center; font-weight: 800; letter-spacing: 0.2em; color: var(--accent); }
+  .app { height: 100%; display: grid; grid-template-columns: 260px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; gap: 8px; padding: 8px 8px 0; }
   main { background: var(--surface); border-radius: 10px; overflow-y: auto; padding: 16px 24px 32px; position: relative; }
   .bar { grid-column: 1 / -1; }
   .back { width: 32px; height: 32px; border-radius: 50%; background: var(--bg); color: var(--accent); display: grid; place-items: center; margin-bottom: 12px; }

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { fmt, img } from "./api";
-  import { nav, player } from "./state.svelte";
+  import { invoke } from "@tauri-apps/api/core";
+  import { nav, player, toast } from "./state.svelte";
   import Icon from "./Icon.svelte";
 
   let dragging = $state<number | null>(null);
@@ -9,6 +10,28 @@
   let t = $derived(player.current);
   let dur = $derived(t?.duration_ms ?? 0);
   let pos = $derived(dragging ?? Math.min(player.position, dur));
+
+  // Bass boost (via Equalizer APO, see src-tauri/src/bass.rs)
+  let bass = $state({ installed: false, enabled: false });
+  invoke<typeof bass>("bass_status").then((s) => (bass = s)).catch(() => {});
+
+  async function toggleBass() {
+    if (!bass.installed) {
+      // Re-check in case it was installed while XSTIFY was open.
+      bass = await invoke<typeof bass>("bass_status");
+      if (!bass.installed) {
+        toast.show("Bass boost needs the free Equalizer APO. Opening its download page; install it, pick your speakers, then restart your PC.");
+        invoke("bass_get_eq");
+        return;
+      }
+    }
+    try {
+      await invoke("bass_set", { enabled: !bass.enabled });
+      bass.enabled = !bass.enabled;
+    } catch (e) {
+      toast.show(e);
+    }
+  }
 
   function toggleMute() {
     if (player.volume > 0) {
@@ -61,6 +84,9 @@
   </div>
 
   <div class="right">
+    <button class="bass" class:on={bass.enabled} title={bass.enabled ? "Bass boost: on" : "Bass boost: off"} onclick={toggleBass}>
+      <Icon name="bass" size={18} /><span>Bass</span>
+    </button>
     <button title="Mute" onclick={toggleMute}><Icon name={player.volume > 0 ? "volume" : "mute"} /></button>
     <input
       type="range"
@@ -93,7 +119,9 @@
   .seek span { width: 36px; text-align: center; }
   .seek input { flex: 1; }
   .right { display: flex; justify-content: flex-end; align-items: center; gap: 8px; color: var(--muted); }
-  .right input { width: 110px; }  .right button:hover { color: var(--text); }
+  .right input { width: 110px; }
+  .bass { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 999px; margin-right: 4px; }
+  .bass.on { color: var(--accent); background: color-mix(in srgb, var(--accent) 15%, transparent); }  .right button:hover { color: var(--text); }
   .spin { width: 16px; height: 16px; border: 2px solid var(--bg); border-top-color: transparent; border-radius: 50%; animation: s 0.7s linear infinite; }
   @keyframes s { to { transform: rotate(360deg); } }
 

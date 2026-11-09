@@ -11,6 +11,7 @@
   import Artist from "$lib/views/Artist.svelte";
   import Album from "$lib/views/Album.svelte";
   import Collection from "$lib/views/Collection.svelte";
+  import Settings from "$lib/views/Settings.svelte";
 
   type Phase = "starting" | "login" | "ready";
   let phase = $state<Phase>("starting");
@@ -40,11 +41,6 @@
     } finally {
       busy = false;
     }
-  }
-
-  async function logout() {
-    await invoke("logout");
-    location.reload();
   }
 
   // Scroll to top when the view changes.
@@ -78,7 +74,7 @@
   <Login {needsClientId} {busy} {error} onlogin={login} />
 {:else}
   <div class="app">
-    <Sidebar onlogout={logout} />
+    <Sidebar />
     <main bind:this={main}>
       {#if nav.stack.length > 1}
         <button class="back" title="Back (Alt+←)" onclick={() => nav.back()}><Icon name="back" /></button>
@@ -93,6 +89,8 @@
         <Collection playlistId={nav.view.id} />
       {:else if nav.view.name === "liked"}
         <Collection />
+      {:else if nav.view.name === "settings"}
+        <Settings />
       {/if}
     </main>
     <div class="bar"><PlayerBar /></div>

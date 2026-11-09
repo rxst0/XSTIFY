@@ -12,7 +12,10 @@ Built with [Tauri](https://tauri.app) (Rust + system WebView2) and Svelte. The r
 - Artist pages (popular tracks, discography) and album pages
 - Liked Songs and all your playlists, loaded as you scroll
 - Player bar with play/pause, previous/next, seek and volume
-- Shows the current song in Windows' "now playing" info, so media keys, the volume flyout and Stream Deck "now playing" plugins work
+- Shows the current song in Windows' media controls, so media keys, the volume flyout and Stream Deck "now playing" plugins work
+- Themes: pick any main color and accent color, or choose a preset (Settings)
+- Optional bass boost through the free [Equalizer APO](https://sourceforge.net/projects/equalizerapo/) (affects all audio on that output)
+- Built-in updates: when a new version is released, an **Update** button appears in the sidebar and installs it over the old version
 - Keyboard shortcuts:
 
   | Keys | Action |

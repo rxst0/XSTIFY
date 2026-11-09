@@ -7,6 +7,7 @@
   --text: #fff;
   --muted: #a7a7a7;
   --accent: #8b7bff;
+  --on-accent: #000;
   color-scheme: dark;
 }
 
@@ -38,6 +39,6 @@ button:focus-visible, [role="button"]:focus-visible { outline: 2px solid var(--t
 }
 
 ::-webkit-scrollbar { width: 12px; }
-::-webkit-scrollbar-thumb { background: rgb(255 255 255 / 0.25); border: 3px solid transparent; background-clip: padding-box; border-radius: 6px; }
-::-webkit-scrollbar-thumb:hover { background-color: rgb(255 255 255 / 0.4); }
+::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--text) 25%, transparent); border: 3px solid transparent; background-clip: padding-box; border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background-color: color-mix(in srgb, var(--text) 40%, transparent); }
 ::-webkit-scrollbar-track { background: transparent; }

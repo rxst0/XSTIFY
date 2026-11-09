@@ -2,8 +2,8 @@
   import { get, img, type Playlist } from "./api";
   import { nav, toast } from "./state.svelte";
   import Icon from "./Icon.svelte";
+  import UpdateButton from "./UpdateButton.svelte";
 
-  let { onlogout }: { onlogout: () => void } = $props();
   let playlists = $state<Playlist[]>([]);
 
   $effect(() => {
@@ -17,6 +17,7 @@
 
 <aside>
   <div class="brand">XSTIFY</div>
+  <UpdateButton />
   <nav>
     <button class:on={isView("search")} onclick={() => nav.go({ name: "search" })}><Icon name="search" /> Search</button>
     <button class:on={isView("liked")} onclick={() => nav.go({ name: "liked" })}><Icon name="heart" /> Liked Songs</button>
@@ -30,7 +31,7 @@
       </button>
     {/each}
   </div>
-  <button class="out" onclick={onlogout}><Icon name="logout" size={16} /> Sign out</button>
+  <button class="out" class:on={isView("settings")} onclick={() => nav.go({ name: "settings" })}><Icon name="settings" size={18} /> Settings</button>
 </aside>
 
 <style>

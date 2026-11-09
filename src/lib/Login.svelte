@@ -46,7 +46,7 @@
   code { background: var(--surface-2); padding: 1px 6px; border-radius: 4px; color: var(--text); font-size: 13px; user-select: all; }
   input { background: var(--surface-2); border: 1px solid var(--surface-3); border-radius: 6px; padding: 12px; color: var(--text); font: inherit; outline: none; }
   input:focus { border-color: var(--text); }
-  button { background: var(--accent); color: #000; font-weight: 700; padding: 12px; border-radius: 999px; }
+  button { background: var(--accent); color: var(--on-accent); font-weight: 700; padding: 12px; border-radius: 999px; }
   button:disabled { opacity: 0.5; cursor: default; }
   button.ghost { background: none; color: var(--text); border: 1px solid var(--surface-3); }
   button.ghost:hover { border-color: var(--text); }

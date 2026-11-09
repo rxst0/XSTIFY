@@ -1,4 +1,6 @@
 mod auth;
+mod bass;
+mod media;
 
 use serde::Serialize;
 use serde_json::Value;
@@ -138,12 +140,19 @@ async fn api_call(state: &AppState, method: reqwest::Method, path: String, body:
 pub fn run() {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("xstify_lib=info")).init();
     tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(AppState {
             http: reqwest::Client::new(),
             api: Mutex::new(None),
         })
+        .setup(|app| {
+            media::setup(app.handle());
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
-            status, login, cancel_login, logout, access_token, api_get, api_send
+            status, login, cancel_login, logout, access_token, api_get, api_send,
+            media::media_track, media::media_state,
+            bass::bass_status, bass::bass_set, bass::bass_get_eq
         ])
         .run(tauri::generate_context!())
         .expect("error while running XSTIFY");

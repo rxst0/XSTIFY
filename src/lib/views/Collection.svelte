@@ -1,6 +1,6 @@
 <script lang="ts">
   // Liked Songs or a playlist: paged track list that loads more as you scroll.
-  import { get, img, unwrapTracks, type Track } from "../api";
+  import { errMsg, get, img, unwrapTracks, type Track } from "../api";
   import { player, toast } from "../state.svelte";
   import TrackList from "../TrackList.svelte";
   import Header from "../Header.svelte";
@@ -14,10 +14,12 @@
   let next = $state<string | null>(null);
   let busy = false;
   let gen = 0;
+  let blocked = $state(false);
 
   $effect(() => {
     const pid = playlistId;
     const mine = ++gen;
+    blocked = false;
     tracks = [];
     next = null;
     title = pid ? "" : "Liked Songs";
@@ -39,7 +41,9 @@
           await loadPage(`/me/tracks?limit=50&market=from_token`, mine);
         }
       } catch (e) {
-        toast.show(e);
+        if (mine !== gen) return;
+        if (errMsg(e).includes("403")) blocked = true;
+        else toast.show(e);
       }
     })();
   });
@@ -64,5 +68,15 @@
 </script>
 
 <Header {image} kind={playlistId ? "Playlist" : "Collection"} title={title || "…"} {meta} onplay={tracks.length ? () => player.playList(tracks, 0) : undefined} />
+{#if blocked}
+  <p class="blocked">
+    Spotify doesn't let personal apps like XSTIFY open this playlist. This usually happens with playlists made by
+    Spotify or by other people. Playlists you created yourself work.
+  </p>
+{/if}
 <TrackList {tracks} />
 {#if next}<LoadMore onmore={more} />{/if}
+
+<style>
+  .blocked { color: var(--muted); max-width: 560px; line-height: 1.5; padding: 8px 0; }
+</style>

@@ -44,7 +44,7 @@
   .kind { font-size: 13px; font-weight: 600; }
   h1 { font-size: clamp(28px, 5vw, 64px); line-height: 1.05; margin: 6px 0 10px; overflow-wrap: anywhere; }
   .meta { color: var(--muted); font-size: 14px; }
-  .play { width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: #000; display: grid; place-items: center; margin: 4px 0 8px; transition: transform 0.1s; }
+  .play { width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; margin: 4px 0 8px; transition: transform 0.1s; }
   .play:hover { transform: scale(1.05); }
   @media (max-width: 640px) {
     header { flex-direction: column; align-items: flex-start; }

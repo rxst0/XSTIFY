@@ -1,11 +1,13 @@
 import { invoke } from "@tauri-apps/api/core";
-import { errMsg, type Track } from "./api";
+import { listen } from "@tauri-apps/api/event";
+import { errMsg, img, type Track } from "./api";
 
 // ---------- Navigation ----------
 
 export type View =
   | { name: "search" }
   | { name: "liked" }
+  | { name: "settings" }
   | { name: "artist"; id: string }
   | { name: "album"; id: string }
   | { name: "playlist"; id: string };
@@ -19,7 +21,7 @@ class Nav {
     const cur = this.view;
     if (cur.name === v.name && (cur as any).id === (v as any).id) return;
     // Sidebar destinations reset history so "back" never gets confusing.
-    if (v.name === "search" || v.name === "liked" || v.name === "playlist") this.stack = [v];
+    if (["search", "liked", "playlist", "settings"].includes(v.name)) this.stack = [v];
     else this.stack = [...this.stack, v];
   }
   back() {
@@ -161,46 +163,52 @@ class Player {
     this.playing = !s.paused;
     this.loading = !!s.loading;
     this.hasNext = (s.track_window?.next_tracks?.length ?? 0) > 0;
-    if ("mediaSession" in navigator) {
-      navigator.mediaSession.playbackState = this.playing ? "playing" : "paused";
-      try {
-        navigator.mediaSession.setPositionState({
-          duration: (this.current?.duration_ms ?? 0) / 1000,
-          position: Math.min(this.position, this.current?.duration_ms ?? 0) / 1000,
-          playbackRate: 1,
-        });
-      } catch {}
-    }
+    invoke("media_state", { playing: this.playing, positionMs: Math.round(this.position) }).catch(() => {});
   }
 
   /** Tell Windows what's playing: cover art on Stream Deck, media keys, volume flyout. */
   #publishNowPlaying() {
     const t = this.current;
-    if (!t || !("mediaSession" in navigator)) return;
-    const images = [...t.album.images].sort((a, b) => (a.width ?? 0) - (b.width ?? 0));
-    navigator.mediaSession.metadata = new MediaMetadata({
+    if (!t) return;
+    invoke("media_track", {
       title: t.name,
       artist: t.artists.map((a) => a.name).join(", "),
       album: t.album.name,
-      artwork: images.map((i) => ({ src: i.url, sizes: `${i.width}x${i.height}`, type: "image/jpeg" })),
-    });
+      cover: img(t.album.images, 300),
+      durationMs: t.duration_ms,
+    }).catch(() => {});
   }
 
+  /** Keyboard media keys / Stream Deck buttons arrive from Windows via the backend. */
   #registerMediaKeys() {
-    if (!("mediaSession" in navigator)) return;
-    const ms = navigator.mediaSession;
-    const set = (a: MediaSessionAction, h: MediaSessionActionHandler) => {
-      try {
-        ms.setActionHandler(a, h);
-      } catch {}
-    };
-    set("play", () => !this.playing && this.toggle());
-    set("pause", () => this.playing && this.toggle());
-    set("nexttrack", () => this.next());
-    set("previoustrack", () => this.prev());
-    set("seekto", (d) => d.seekTime != null && this.seek(d.seekTime * 1000));
-    set("seekforward", (d) => this.seek(this.position + (d.seekOffset ?? 10) * 1000));
-    set("seekbackward", (d) => this.seek(Math.max(0, this.position - (d.seekOffset ?? 10) * 1000)));
+    listen<{ action: string; ms: number | null }>("media-key", ({ payload: { action, ms } }) => {
+      switch (action) {
+        case "play":
+          if (!this.playing) this.toggle();
+          break;
+        case "pause":
+          if (this.playing) this.toggle();
+          break;
+        case "toggle":
+          this.toggle();
+          break;
+        case "next":
+          this.next();
+          break;
+        case "previous":
+          this.prev();
+          break;
+        case "seek":
+          if (ms != null) this.seek(ms);
+          break;
+        case "forward":
+          this.seek(this.position + (ms ?? 10000));
+          break;
+        case "backward":
+          this.seek(Math.max(0, this.position - (ms ?? 10000)));
+          break;
+      }
+    });
   }
 
   // ----- controls -----

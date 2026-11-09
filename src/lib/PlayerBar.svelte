@@ -1,36 +1,23 @@
 <script lang="ts">
   import { fmt, img } from "./api";
-  import { invoke } from "@tauri-apps/api/core";
-  import { nav, player, toast } from "./state.svelte";
+  import { nav, player } from "./state.svelte";
+  import { eq } from "./eq.svelte";
   import Icon from "./Icon.svelte";
+  import EqPanel from "./EqPanel.svelte";
 
   let dragging = $state<number | null>(null);
   let lastVol = 70;
+  let eqOpen = $state(false);
 
   let t = $derived(player.current);
   let dur = $derived(t?.duration_ms ?? 0);
   let pos = $derived(dragging ?? Math.min(player.position, dur));
 
-  // Bass boost (via Equalizer APO, see src-tauri/src/bass.rs)
-  let bass = $state({ installed: false, enabled: false });
-  invoke<typeof bass>("bass_status").then((s) => (bass = s)).catch(() => {});
+  eq.refresh();
 
-  async function toggleBass() {
-    if (!bass.installed) {
-      // Re-check in case it was installed while XSTIFY was open.
-      bass = await invoke<typeof bass>("bass_status");
-      if (!bass.installed) {
-        toast.show("Bass boost needs the free Equalizer APO. Opening its download page; install it, pick your speakers, then restart your PC.");
-        invoke("bass_get_eq");
-        return;
-      }
-    }
-    try {
-      await invoke("bass_set", { enabled: !bass.enabled });
-      bass.enabled = !bass.enabled;
-    } catch (e) {
-      toast.show(e);
-    }
+  function openEq() {
+    eqOpen = !eqOpen;
+    if (eqOpen) eq.refresh();
   }
 
   function toggleMute() {
@@ -84,10 +71,21 @@
   </div>
 
   <div class="right">
-    <button class="bass" class:on={bass.enabled} title={bass.enabled ? "Bass boost: on" : "Bass boost: off"} onclick={toggleBass}>
-      <Icon name="bass" size={18} /><span>Bass</span>
-    </button>
-    <button title="Mute" onclick={toggleMute}><Icon name={player.volume > 0 ? "volume" : "mute"} /></button>
+    <div class="eq">
+      <button class="eqbtn" class:open={eqOpen} title="Equalizer" onclick={openEq}>
+        <Icon name="bass" size={18} /><span>EQ</span>
+      </button>
+      <button
+        class="switch"
+        class:on={eq.enabled}
+        disabled={eq.busy}
+        role="switch"
+        aria-checked={eq.enabled}
+        title={eq.enabled ? "Equalizer on" : "Equalizer off"}
+        onclick={() => eq.setEnabled(!eq.enabled)}
+      ><span></span></button>
+    </div>
+    <button class="icon" title="Mute" onclick={toggleMute}><Icon name={player.volume > 0 ? "volume" : "mute"} /></button>
     <input
       type="range"
       min="0"
@@ -100,6 +98,8 @@
   </div>
 </footer>
 
+{#if eqOpen}<EqPanel onclose={() => (eqOpen = false)} />{/if}
+
 <style>
   footer { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) minmax(0, 1fr); align-items: center; gap: 16px; padding: 8px 12px; height: 76px; }
   .now { display: flex; align-items: center; gap: 12px; min-width: 0; }
@@ -108,26 +108,35 @@
   .name, .artists { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .name { font-weight: 600; font-size: 14px; }
   .artists { color: var(--muted); font-size: 12px; }
+
   .center { display: grid; gap: 6px; justify-items: center; }
   .buttons { display: flex; align-items: center; gap: 18px; }
-  .buttons button { color: var(--muted); display: grid; place-items: center; }
-  .buttons button:hover:not(:disabled) { color: var(--text); }
-  .buttons button:disabled { opacity: 0.4; cursor: default; }
-  .buttons .pp { width: 36px; height: 36px; border-radius: 50%; background: var(--text); color: var(--bg); }
-  .buttons .pp:hover:not(:disabled) { color: var(--bg); transform: scale(1.05); }
+  .buttons button { color: var(--accent); display: grid; place-items: center; transition: transform 0.1s, filter 0.1s; }
+  .buttons button:hover:not(:disabled) { filter: brightness(1.2); transform: scale(1.08); }
+  .buttons button:disabled { opacity: 0.35; cursor: default; }
+  .buttons .pp { width: 38px; height: 38px; border-radius: 50%; background: var(--accent); color: var(--on-accent); }
   .seek { display: flex; align-items: center; gap: 8px; width: 100%; max-width: 600px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
   .seek span { width: 36px; text-align: center; }
   .seek input { flex: 1; }
-  .right { display: flex; justify-content: flex-end; align-items: center; gap: 8px; color: var(--muted); }
-  .right input { width: 110px; }
-  .bass { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 999px; margin-right: 4px; }
-  .bass.on { color: var(--accent); background: color-mix(in srgb, var(--accent) 15%, transparent); }  .right button:hover { color: var(--text); }
-  .spin { width: 16px; height: 16px; border: 2px solid var(--bg); border-top-color: transparent; border-radius: 50%; animation: s 0.7s linear infinite; }
+
+  .right { display: flex; justify-content: flex-end; align-items: center; gap: 8px; }
+  .right > input { width: 110px; }
+  .icon { color: var(--accent); display: grid; place-items: center; }
+  .icon:hover { filter: brightness(1.2); }
+
+  .eq { display: flex; align-items: center; gap: 6px; margin-right: 6px; }
+  .eqbtn { display: flex; align-items: center; gap: 4px; color: var(--accent); font-size: 12px; font-weight: 700; padding: 4px 8px; border-radius: 999px; }
+  .eqbtn:hover, .eqbtn.open { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+  .switch { width: 32px; height: 18px; border-radius: 999px; background: var(--surface-3); position: relative; transition: background 0.15s; flex: none; }
+  .switch span { position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--text); transition: transform 0.15s, background 0.15s; }
+  .switch.on { background: var(--accent); }
+  .switch.on span { transform: translateX(14px); background: var(--on-accent); }
+
+  .spin { width: 16px; height: 16px; border: 2px solid var(--on-accent); border-top-color: transparent; border-radius: 50%; animation: s 0.7s linear infinite; }
   @keyframes s { to { transform: rotate(360deg); } }
 
-  input[type="range"] { appearance: none; height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--text) var(--p), var(--surface-3) var(--p)); cursor: pointer; }
-  input[type="range"]:hover { background: linear-gradient(to right, var(--accent) var(--p), var(--surface-3) var(--p)); }
-  input[type="range"]::-webkit-slider-thumb { appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--text); opacity: 0; }
+  input[type="range"] { appearance: none; height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--accent) var(--p), var(--surface-3) var(--p)); cursor: pointer; }
+  input[type="range"]::-webkit-slider-thumb { appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); opacity: 0; }
   input[type="range"]:hover::-webkit-slider-thumb { opacity: 1; }
   input[type="range"]:disabled { cursor: default; }
   @media (max-width: 760px) { .right { display: none; } footer { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); } }

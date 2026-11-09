@@ -14,7 +14,7 @@ Built with [Tauri](https://tauri.app) (Rust + system WebView2) and Svelte. The r
 - Player bar with play/pause, previous/next, seek and volume
 - Shows the current song in Windows' media controls, so media keys, the volume flyout and Stream Deck "now playing" plugins work
 - Themes: pick any main color and accent color, or choose a preset (Settings)
-- Optional bass boost through the free [Equalizer APO](https://sourceforge.net/projects/equalizerapo/) (affects all audio on that output)
+- Built-in 10-band equalizer with presets and an on/off switch. It only affects XSTIFY. It needs a silent audio output on your PC, such as Voicemod's "Dummy Output" (see [How the equalizer works](#how-the-equalizer-works))
 - Built-in updates: when a new version is released, an **Update** button appears in the sidebar and installs it over the old version
 - Keyboard shortcuts:
 
@@ -45,6 +45,17 @@ npm install
 npm run tauri dev      # run with hot reload
 npm run tauri build    # optimized build and installer
 ```
+
+## How the equalizer works
+
+Spotify's audio is DRM-protected inside its player frame, so apps can't process it directly. When the EQ is on:
+
+1. Spotify's player inside XSTIFY sends its audio to a **silent output** (an output nobody listens to, such as Voicemod's "Dummy Output"), so the unprocessed sound isn't heard.
+2. XSTIFY captures that audio using Windows' per-app capture, runs it through a 10-band equalizer, and plays it on your speakers.
+
+Audio is processed in memory only and is never saved. If your PC has no silent output, the EQ explains this and stays off. Normal playback isn't affected.
+
+To choose an audio output, the browser engine requires **microphone permission** for the frame asking. XSTIFY grants it only to Spotify's player (`https://sdk.scdn.co`). The microphone is opened for an instant to list outputs, then closed. XSTIFY never records.
 
 ## Privacy
 

@@ -3,6 +3,7 @@
   import { onMount } from "svelte";
   import { errMsg } from "$lib/api";
   import { nav, player, toast } from "$lib/state.svelte";
+  import { eq } from "$lib/eq.svelte";
   import Login from "$lib/Login.svelte";
   import Sidebar from "$lib/Sidebar.svelte";
   import PlayerBar from "$lib/PlayerBar.svelte";
@@ -34,6 +35,7 @@
     try {
       await invoke("login", { clientId: clientId ?? null });
       await player.init();
+      eq.restore();
       phase = "ready";
     } catch (e) {
       error = errMsg(e);
@@ -104,8 +106,8 @@
   .app { height: 100vh; display: grid; grid-template-columns: 260px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; gap: 8px; padding: 8px 8px 0; }
   main { background: var(--surface); border-radius: 10px; overflow-y: auto; padding: 16px 24px 32px; position: relative; }
   .bar { grid-column: 1 / -1; }
-  .back { width: 32px; height: 32px; border-radius: 50%; background: var(--bg); display: grid; place-items: center; margin-bottom: 12px; }
-  .back:hover { background: var(--hover); }
+  .back { width: 32px; height: 32px; border-radius: 50%; background: var(--bg); color: var(--accent); display: grid; place-items: center; margin-bottom: 12px; }
+  .back:hover { background: color-mix(in srgb, var(--accent) 18%, var(--bg)); }
   .toast { position: fixed; bottom: 96px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 8px; font-size: 14px; max-width: min(560px, calc(100vw - 32px)); box-shadow: 0 8px 24px rgb(0 0 0 / 0.4); z-index: 10; }
   @media (max-width: 760px) { .app { grid-template-columns: 200px minmax(0, 1fr); } }
 </style>

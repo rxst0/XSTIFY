@@ -1,6 +1,6 @@
 [package]
 name = "xstify"
-version = "0.1.1"
+version = "0.1.2"
 description = "Lightweight Spotify client"
 authors = ["rxst0"]
 edition = "2024"
@@ -27,8 +27,10 @@ reqwest = { version = "0.13.5", features = ["json"] }
 keyring = { version = "3", features = ["windows-native"] }
 env_logger = { version = "0.11.11", default-features = false, features = ["auto-color", "humantime"] }
 log = "0.4.35"
-souvlaki = "0.9.3"
 tauri-plugin-updater = "2"
+windows = { version = "0.62", features = ["Foundation", "Media", "Storage_Streams", "Win32_Devices_FunctionDiscovery", "Win32_Foundation", "Win32_Media_Audio", "Win32_System_Com", "Win32_System_Com_StructuredStorage", "Win32_System_Diagnostics_ToolHelp", "Win32_System_Variant", "Win32_System_WinRT", "Win32_UI_Shell_PropertiesSystem"] }
+webview2-com = "0.39"
+windows-core = "0.62"
 
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration

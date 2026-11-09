@@ -1,5 +1,5 @@
 mod auth;
-mod bass;
+mod eq;
 mod media;
 
 use serde::Serialize;
@@ -102,8 +102,8 @@ async fn api_call(state: &AppState, method: reqwest::Method, path: String, body:
         return Err("Invalid API path".into());
     };
 
-    for attempt in 0..2 {
-        let token = api_token(state, attempt > 0).await?;
+    for attempt in 0..3 {
+        let token = api_token(state, false).await?;
         let mut req = state.http.request(method.clone(), &url).bearer_auth(token);
         req = match &body {
             Some(b) => req.json(b),
@@ -119,7 +119,15 @@ async fn api_call(state: &AppState, method: reqwest::Method, path: String, body:
             log::warn!("{method} {url} -> {status}");
         }
         match status {
-            401 if attempt == 0 => continue,
+            401 if attempt < 2 => {
+                api_token(state, true).await?; // token expired early: refresh and retry
+                continue;
+            }
+            // Spotify's servers occasionally hiccup (502/503/504): wait briefly and retry.
+            502..=504 if attempt < 2 => {
+                tokio::time::sleep(std::time::Duration::from_millis(600)).await;
+                continue;
+            }
             204 => return Ok(Value::Null),
             429 => return Err("Spotify is rate-limiting requests. Try again in a moment.".into()),
             s if !(200..300).contains(&s) => {
@@ -136,6 +144,35 @@ async fn api_call(state: &AppState, method: reqwest::Method, path: String, body:
     Err("Session expired. Please sign in again.".into())
 }
 
+/// Grant microphone permission to Spotify's player frame only (and nothing else).
+/// It's needed solely so the player can switch its audio output for the built-in EQ;
+/// the frame script closes the mic immediately after the one-time check.
+fn allow_player_mic(window: &tauri::WebviewWindow) {
+    use webview2_com::{
+        Microsoft::Web::WebView2::Win32::{COREWEBVIEW2_PERMISSION_KIND, COREWEBVIEW2_PERMISSION_KIND_MICROPHONE, COREWEBVIEW2_PERMISSION_STATE_ALLOW},
+        PermissionRequestedEventHandler,
+    };
+    let _ = window.with_webview(|wv| unsafe {
+        let Ok(core) = wv.controller().CoreWebView2() else { return };
+        let mut token = Default::default();
+        let _ = core.add_PermissionRequested(
+            &PermissionRequestedEventHandler::create(Box::new(|_, args| {
+                let Some(args) = args else { return Ok(()) };
+                let mut kind = COREWEBVIEW2_PERMISSION_KIND::default();
+                args.PermissionKind(&mut kind)?;
+                let mut uri = windows::core::PWSTR::null();
+                args.Uri(&mut uri)?;
+                let uri = webview2_com::take_pwstr(uri);
+                if kind == COREWEBVIEW2_PERMISSION_KIND_MICROPHONE && uri.starts_with("https://sdk.scdn.co/") {
+                    args.SetState(COREWEBVIEW2_PERMISSION_STATE_ALLOW)?;
+                }
+                Ok(())
+            })),
+            &mut token,
+        );
+    });
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("xstify_lib=info")).init();
@@ -145,14 +182,21 @@ pub fn run() {
             http: reqwest::Client::new(),
             api: Mutex::new(None),
         })
+        .manage(eq::Eq::default())
         .setup(|app| {
+            // The window is built here (not from config alone) so the frame script can be added.
+            let cfg = app.config().app.windows[0].clone();
+            let window = tauri::WebviewWindowBuilder::from_config(app.handle(), &cfg)?
+                .initialization_script_for_all_frames(include_str!("frame_script.js"))
+                .build()?;
+            allow_player_mic(&window);
             media::setup(app.handle());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             status, login, cancel_login, logout, access_token, api_get, api_send,
             media::media_track, media::media_state,
-            bass::bass_status, bass::bass_set, bass::bass_get_eq
+            eq::eq_status, eq::eq_start, eq::eq_gains, eq::eq_stop
         ])
         .run(tauri::generate_context!())
         .expect("error while running XSTIFY");

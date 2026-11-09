@@ -163,7 +163,11 @@ class Player {
     this.playing = !s.paused;
     this.loading = !!s.loading;
     this.hasNext = (s.track_window?.next_tracks?.length ?? 0) > 0;
-    invoke("media_state", { playing: this.playing, positionMs: Math.round(this.position) }).catch(() => {});
+    invoke("media_state", {
+      playing: this.playing,
+      positionMs: Math.round(this.position),
+      durationMs: this.current?.duration_ms ?? 0,
+    }).catch(() => {});
   }
 
   /** Tell Windows what's playing: cover art on Stream Deck, media keys, volume flyout. */

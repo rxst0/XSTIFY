@@ -58,7 +58,7 @@
   .row:hover, .row:focus-visible { background: var(--hover); outline: none; }
   .row.active .name { color: var(--accent); }
   .num { color: var(--muted); display: grid; place-items: center; font-variant-numeric: tabular-nums; height: 32px; }
-  .num .p { display: none; color: var(--text); }
+  .num .p { display: none; color: var(--accent); }
   .row:hover .num .n { display: none; }
   .row:hover .num .p { display: block; }
   .active .num .n { color: var(--accent); }

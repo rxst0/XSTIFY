@@ -40,6 +40,7 @@
   nav { display: grid; gap: 2px; }
   button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 12px; border-radius: 6px; color: var(--muted); font-weight: 600; text-align: left; }
   button:hover { color: var(--text); background: var(--hover); }
+  nav button :global(svg), .out :global(svg) { color: var(--accent); }
   button.on { color: var(--text); background: var(--surface-2); }
   .label { color: var(--muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; padding: 18px 12px 8px; }
   .pls { overflow-y: auto; flex: 1; min-height: 0; display: grid; align-content: start; gap: 2px; }

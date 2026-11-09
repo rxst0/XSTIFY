@@ -62,7 +62,7 @@
 {/if}
 
 <style>
-  .more { color: var(--muted); font-weight: 600; font-size: 13px; padding: 8px 12px; }
-  .more:hover { color: var(--text); }
+  .more { color: var(--accent); font-weight: 600; font-size: 13px; padding: 8px 12px; }
+  .more:hover { filter: brightness(1.2); }
   .loading { color: var(--muted); padding: 40px 0; }
 </style>

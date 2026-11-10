@@ -11,6 +11,7 @@ Built with [Tauri](https://tauri.app) (Rust + system WebView2) and Svelte. The r
 - Search songs, artists and albums together as you type
 - Artist pages (popular tracks, discography) and album pages
 - Liked Songs and all your playlists, loaded as you scroll
+- **Local Files**: add your own music (MP3, M4A, FLAC, WAV, OGG and more) with Add files, Add folder, or drag and drop. It's played by XSTIFY itself, not through Spotify. Files stay where they are; XSTIFY only remembers where to find them
 - Player bar with play/pause, previous/next, seek and volume
 - Shows the current song in Windows' media controls, so media keys, the volume flyout and Stream Deck "now playing" plugins work
 - Themes: pick any main color and accent color, or choose a preset (Settings)

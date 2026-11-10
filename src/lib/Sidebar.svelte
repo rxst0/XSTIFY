@@ -30,7 +30,8 @@
       </button>
     {/each}
   </div>
-  <button class="out" class:on={isView("settings")} onclick={() => nav.go({ name: "settings" })}><Icon name="settings" size={18} /> Settings</button>
+  <button class="out" class:on={isView("local")} onclick={() => nav.go({ name: "local" })}><Icon name="folder" size={18} /> Local Files</button>
+  <button class="out settings" class:on={isView("settings")} onclick={() => nav.go({ name: "settings" })}><Icon name="settings" size={18} /> Settings</button>
 </aside>
 
 <style>
@@ -47,4 +48,5 @@
   .ph { background: var(--surface-2); display: grid; place-items: center; }
   .pn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .out { font-size: 13px; margin-top: 6px; }
+  .out.settings { margin-top: 2px; }
 </style>

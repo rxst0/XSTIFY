@@ -31,13 +31,18 @@
 <footer>
   <div class="now">
     {#if t}
-      <button class="cover" title="Go to album" onclick={() => nav.go({ name: "album", id: t.album.id })}>
-        <img src={img(t.album.images, 64)} alt="" />
-      </button>
+      {#if t.album.id}
+        <button class="cover" title="Go to album" onclick={() => nav.go({ name: "album", id: t.album.id })}>
+          <img src={img(t.album.images, 64)} alt="" />
+        </button>
+      {:else}
+        <!-- Local file: no Spotify album page -->
+        <button class="cover local" title="Local Files" onclick={() => nav.go({ name: "local" })}><Icon name="folder" size={26} /></button>
+      {/if}
       <div class="meta">
         <div class="name">{t.name}</div>
         <div class="artists">
-          {#each t.artists as a, j}<button class="link" onclick={() => nav.go({ name: "artist", id: a.id })}>{a.name}</button>{#if j < t.artists.length - 1}, {/if}{/each}
+          {#each t.artists as a, j}{#if a.id}<button class="link" onclick={() => nav.go({ name: "artist", id: a.id })}>{a.name}</button>{:else}{a.name}{/if}{#if j < t.artists.length - 1}, {/if}{/each}
         </div>
       </div>
     {/if}
@@ -104,6 +109,7 @@
   footer { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) minmax(0, 1fr); align-items: center; gap: 16px; padding: 8px 12px; height: 76px; }
   .now { display: flex; align-items: center; gap: 12px; min-width: 0; }
   .cover img { width: 56px; height: 56px; border-radius: 4px; display: block; background: var(--surface-2); }
+  .cover.local { width: 56px; height: 56px; border-radius: 4px; background: var(--surface-2); color: var(--accent); display: grid; place-items: center; flex: none; }
   .meta { min-width: 0; }
   .name, .artists { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .name { font-weight: 600; font-size: 14px; }

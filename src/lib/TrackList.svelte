@@ -8,7 +8,14 @@
     covers = true,
     album = true,
     numbered = false,
-  }: { tracks: Track[]; covers?: boolean; album?: boolean; numbered?: boolean } = $props();
+    onremove,
+  }: {
+    tracks: Track[];
+    covers?: boolean;
+    album?: boolean;
+    numbered?: boolean;
+    onremove?: (t: Track) => void;
+  } = $props();
 </script>
 
 <div class="list" class:noalbum={!album}>
@@ -32,14 +39,19 @@
         <div class="text">
           <div class="name">{t.name}{#if t.explicit}<span class="e">E</span>{/if}</div>
           <div class="sub">
-            {#each t.artists as a, j}<button class="link" onclick={(e) => { e.stopPropagation(); nav.go({ name: "artist", id: a.id }); }}>{a.name}</button>{#if j < t.artists.length - 1}, {/if}{/each}
+            {#each t.artists as a, j}{#if a.id}<button class="link" onclick={(e) => { e.stopPropagation(); nav.go({ name: "artist", id: a.id }); }}>{a.name}</button>{:else}{a.name}{/if}{#if j < t.artists.length - 1}, {/if}{/each}
           </div>
         </div>
       </div>
       {#if album}
         <button class="link albumcol" onclick={(e) => { e.stopPropagation(); nav.go({ name: "album", id: t.album.id }); }}>{t.album.name}</button>
       {/if}
-      <div class="dur">{fmt(t.duration_ms)}</div>
+      <div class="dur">
+        {#if onremove}
+          <button class="remove" title="Remove from Local Files" aria-label="Remove" onclick={(e) => { e.stopPropagation(); onremove(t); }}>✕</button>
+        {/if}
+        <span class="len">{t.duration_ms ? fmt(t.duration_ms) : ""}</span>
+      </div>
     </div>
   {/each}
 </div>
@@ -69,7 +81,11 @@
   .sub, .albumcol { color: var(--muted); font-size: 13px; }
   .albumcol { text-align: left; min-width: 0; }
   .e { font-size: 9px; background: var(--muted); color: var(--bg); border-radius: 2px; padding: 0 4px; margin-left: 6px; vertical-align: 2px; }
-  .dur { color: var(--muted); font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
+  .dur { color: var(--muted); font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; display: flex; justify-content: flex-end; align-items: center; gap: 8px; }
+  .remove { color: var(--muted); font-size: 12px; width: 22px; height: 22px; border-radius: 50%; display: none; place-items: center; }
+  .row:hover .remove { display: grid; }
+  .row:hover .remove + .len { display: none; }
+  .remove:hover { color: var(--accent); background: var(--surface-2); }
   @media (max-width: 760px) {
     .row { grid-template-columns: 40px minmax(0, 1fr) 56px; }
     .albumcol { display: none; }

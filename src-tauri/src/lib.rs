@@ -1,5 +1,6 @@
 mod auth;
 mod eq;
+mod local;
 mod media;
 
 use serde::Serialize;
@@ -163,7 +164,10 @@ fn allow_player_mic(window: &tauri::WebviewWindow) {
                 let mut uri = windows::core::PWSTR::null();
                 args.Uri(&mut uri)?;
                 let uri = webview2_com::take_pwstr(uri);
-                if kind == COREWEBVIEW2_PERMISSION_KIND_MICROPHONE && uri.starts_with("https://sdk.scdn.co/") {
+                // Spotify's player frame, plus XSTIFY's own page (for routing Local Files
+                // audio when the EQ is on). Release builds use tauri.localhost; dev uses localhost:1420.
+                let allowed = ["https://sdk.scdn.co/", "http://tauri.localhost/", "http://localhost:1420/"];
+                if kind == COREWEBVIEW2_PERMISSION_KIND_MICROPHONE && allowed.iter().any(|a| uri.starts_with(a)) {
                     args.SetState(COREWEBVIEW2_PERMISSION_STATE_ALLOW)?;
                 }
                 Ok(())
@@ -178,6 +182,7 @@ pub fn run() {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("xstify_lib=info")).init();
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_dialog::init())
         .manage(AppState {
             http: reqwest::Client::new(),
             api: Mutex::new(None),
@@ -191,12 +196,14 @@ pub fn run() {
                 .build()?;
             allow_player_mic(&window);
             media::setup(app.handle());
+            local::setup(app.handle());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             status, login, cancel_login, logout, access_token, api_get, api_send,
             media::media_track, media::media_state,
-            eq::eq_status, eq::eq_start, eq::eq_gains, eq::eq_stop
+            eq::eq_status, eq::eq_start, eq::eq_gains, eq::eq_stop,
+            local::local_list, local::local_add, local::local_remove
         ])
         .run(tauri::generate_context!())
         .expect("error while running XSTIFY");

@@ -4,7 +4,7 @@
 // and on/off switch, and tells the player frame which output to use.
 import { invoke } from "@tauri-apps/api/core";
 import { errMsg } from "./api";
-import { toast } from "./state.svelte";
+import { player, toast } from "./state.svelte";
 
 export const BANDS = ["31", "62", "125", "250", "500", "1k", "2k", "4k", "8k", "16k"];
 
@@ -93,7 +93,10 @@ class Equalizer {
         const output = await invoke<string>("eq_start", { gains: this.gains });
         try {
           await routePlayer(output);
+          await player.setLocalOutput(output); // Local Files too
         } catch (e) {
+          await routePlayer("").catch(() => {});
+          await player.setLocalOutput("").catch(() => {});
           await invoke("eq_stop");
           throw e;
         }
@@ -101,6 +104,7 @@ class Equalizer {
         this.enabled = true;
       } else {
         await routePlayer("").catch(() => {}); // back to normal speakers
+        await player.setLocalOutput("").catch(() => {});
         await invoke("eq_stop");
         this.enabled = false;
       }

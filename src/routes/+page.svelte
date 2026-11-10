@@ -13,6 +13,7 @@
   import Album from "$lib/views/Album.svelte";
   import Collection from "$lib/views/Collection.svelte";
   import Settings from "$lib/views/Settings.svelte";
+  import LocalFiles from "$lib/views/LocalFiles.svelte";
 
   type Phase = "starting" | "login" | "ready";
   let phase = $state<Phase>("starting");
@@ -93,6 +94,8 @@
         <Collection />
       {:else if nav.view.name === "settings"}
         <Settings />
+      {:else if nav.view.name === "local"}
+        <LocalFiles />
       {/if}
     </main>
     <div class="bar"><PlayerBar /></div>

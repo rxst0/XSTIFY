@@ -4,7 +4,7 @@ A lightweight desktop music player for your Spotify Premium account. It searches
 
 Built with [Tauri](https://tauri.app) (Rust + system WebView2) and Svelte. The release build is about 10 MB.
 
-> XSTIFY is an unofficial, personal project. It is not affiliated with or endorsed by Spotify. It uses Spotify's official [Web API](https://developer.spotify.com/documentation/web-api) and [Web Playback SDK](https://developer.spotify.com/documentation/web-playback-sdk), and requires **Spotify Premium**.
+> XSTIFY is an unofficial, personal project. It is not affiliated with or endorsed by Spotify. It uses Spotify's official [Web API](https://developer.spotify.com/documentation/web-api) and [Web Playback SDK](https://developer.spotify.com/documentation/web-playback-sdk). Playing music inside XSTIFY requires **Spotify Premium**. Free accounts use Spotify's own web player for Spotify songs.
 
 ## Features
 
@@ -17,6 +17,8 @@ Built with [Tauri](https://tauri.app) (Rust + system WebView2) and Svelte. The r
 - Themes: pick any main color and accent color, or choose a preset (Settings)
 - Built-in 10-band equalizer with presets and an on/off switch. It only affects XSTIFY. It needs a silent audio output on your PC, such as Voicemod's "Dummy Output" (see [How the equalizer works](#how-the-equalizer-works))
 - Built-in updates: when a new version is released, an **Update** button appears in the sidebar and installs it over the old version
+- **Free or Premium**: choose your account type the first time XSTIFY opens (changeable in Settings). Premium plays music inside XSTIFY. Free opens Spotify songs in Spotify's official web player (with Spotify's ads) while search, your library, Local Files, themes and extensions stay in XSTIFY
+- **Extensions (experimental)**: run many Spicetify extensions through XSTIFY's own compatibility layer (Settings → Extensions). Simple extensions work. Ones that depend on the official Spotify app's private services or layout don't. Only add extensions you trust
 - Keyboard shortcuts:
 
   | Keys | Action |

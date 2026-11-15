@@ -3,6 +3,12 @@
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import { LOGO_INNER, LOGO_VIEWBOX, setTaskbarIcon } from "./logo";
   import { loadTheme } from "./theme";
+  import { attachSlot } from "./spicetify.svelte";
+
+  function slot(el: HTMLElement) {
+    attachSlot("topbar", el);
+    return { destroy: () => attachSlot("topbar", null) };
+  }
 
   const win = getCurrentWindow();
   let maximized = $state(false);
@@ -27,6 +33,8 @@
     <svg viewBox={LOGO_VIEWBOX} width="18" height="18" aria-hidden="true" data-tauri-drag-region>{@html LOGO_INNER}</svg>
     <span data-tauri-drag-region>XSTIFY</span>
   </div>
+  <!-- Extension buttons (Spicetify.Topbar.Button) -->
+  <div class="ext" use:slot></div>
   <div class="controls">
     <button title="Minimize" aria-label="Minimize" onclick={() => win.minimize()}>
       <svg viewBox="0 0 10 10" width="10" height="10"><path d="M0 5h10" stroke="currentColor" stroke-width="1.2" /></svg>
@@ -57,6 +65,10 @@
   .brand { display: flex; align-items: center; gap: 8px; padding-left: 14px; color: var(--accent); height: 100%; }
   .brand span { font-weight: 800; font-size: 12px; letter-spacing: 0.14em; }
   .controls { display: flex; height: 100%; }
+  .ext { display: flex; align-items: center; gap: 4px; margin-left: auto; margin-right: 8px; }
+  .ext :global(.xs-ext-btn) { width: 28px; height: 28px; border-radius: 6px; display: grid; place-items: center; color: var(--accent); }
+  .ext :global(.xs-ext-btn:hover) { background: var(--hover); }
+  .ext :global(.xs-ext-btn.active) { background: color-mix(in srgb, var(--accent) 20%, transparent); }
   .controls button { width: 46px; height: 100%; display: grid; place-items: center; color: var(--accent); }
   .controls button:hover { background: var(--hover); }
   .controls .close:hover { background: #e81123; color: #fff; }

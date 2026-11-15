@@ -8,9 +8,9 @@ const SERVICE: &str = "xstify";
 
 pub const KEY_CLIENT_ID: &str = "client_id";
 // Bump the suffix whenever SCOPES changes, so users re-approve once with the new scopes.
-pub const KEY_API_REFRESH: &str = "api_refresh_v3";
+pub const KEY_API_REFRESH: &str = "api_refresh_v4";
 /// Every token key ever used, so sign-out clears old ones too.
-pub const ALL_TOKEN_KEYS: &[&str] = &["api_refresh", "api_refresh_v2", "api_refresh_v3", "play_refresh"];
+pub const ALL_TOKEN_KEYS: &[&str] = &["api_refresh", "api_refresh_v2", "api_refresh_v3", "api_refresh_v4", "play_refresh"];
 
 /// Redirect URI the user registers on their Spotify developer app.
 pub const API_PORT: u16 = 8899;
@@ -21,6 +21,9 @@ const SCOPES: &[&str] = &[
     "user-library-read",
     "playlist-read-private",
     "playlist-read-collaborative",
+    // Extensions that create or edit playlists (e.g. phraseToPlaylist)
+    "playlist-modify-private",
+    "playlist-modify-public",
     // Web Playback SDK (XSTIFY plays audio itself)
     "streaming",
     "user-read-email",

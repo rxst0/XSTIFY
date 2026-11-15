@@ -4,6 +4,13 @@
   import { eq } from "./eq.svelte";
   import Icon from "./Icon.svelte";
   import EqPanel from "./EqPanel.svelte";
+  import { attachSlot } from "./spicetify.svelte";
+
+  /** Gives extensions a place to put their buttons. */
+  function slot(el: HTMLElement, name: "playbar" | "widgets") {
+    attachSlot(name, el);
+    return { destroy: () => attachSlot(name, null) };
+  }
 
   let dragging = $state<number | null>(null);
   let lastVol = 70;
@@ -46,36 +53,43 @@
         </div>
       </div>
     {/if}
+    <!-- Extension widgets (Spicetify.Playbar.Widget) -->
+    <div class="ext-slot" use:slot={"widgets"}></div>
   </div>
 
   <div class="center">
     <div class="buttons">
-      <button title="Previous (Ctrl+←)" onclick={() => player.prev()} disabled={!t}><Icon name="prev" /></button>
+      <button title="Previous (Ctrl+←)" data-testid="control-button-skip-back" onclick={() => player.prev()} disabled={!t}><Icon name="prev" /></button>
       <button class="pp" title="Play/Pause (Space)" onclick={() => player.toggle()} disabled={!t}>
         {#if player.loading}<span class="spin"></span>{:else}<Icon name={player.playing ? "pause" : "play"} size={22} />{/if}
       </button>
       <button title="Next (Ctrl+→)" onclick={() => player.next()} disabled={!t || !player.hasNext}><Icon name="next" /></button>
     </div>
-    <div class="seek">
+    <!-- data-testid labels match Spotify's, so extensions like loopyLoop can find the bar -->
+    <div class="seek" data-testid="playback-progressbar">
       <span>{fmt(pos)}</span>
-      <input
-        type="range"
-        min="0"
-        max={dur || 1}
-        value={pos}
-        disabled={!t}
-        style="--p:{dur ? (pos / dur) * 100 : 0}%"
-        oninput={(e) => (dragging = +e.currentTarget.value)}
-        onchange={(e) => {
-          player.seek(+e.currentTarget.value);
-          dragging = null;
-        }}
-      />
+      <div class="bar" data-testid="progress-bar">
+        <input
+          type="range"
+          min="0"
+          max={dur || 1}
+          value={pos}
+          disabled={!t}
+          style="--p:{dur ? (pos / dur) * 100 : 0}%"
+          oninput={(e) => (dragging = +e.currentTarget.value)}
+          onchange={(e) => {
+            player.seek(+e.currentTarget.value);
+            dragging = null;
+          }}
+        />
+      </div>
       <span>{fmt(dur)}</span>
     </div>
   </div>
 
   <div class="right">
+    <!-- Extension buttons (Spicetify.Playbar.Button) -->
+    <div class="ext-slot" use:slot={"playbar"}></div>
     <div class="eq">
       <button class="eqbtn" class:open={eqOpen} title="Equalizer" onclick={openEq}>
         <Icon name="bass" size={18} /><span>EQ</span>
@@ -123,7 +137,16 @@
   .buttons .pp { width: 38px; height: 38px; border-radius: 50%; background: var(--accent); color: var(--on-accent); }
   .seek { display: flex; align-items: center; gap: 8px; width: 100%; max-width: 600px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
   .seek span { width: 36px; text-align: center; }
-  .seek input { flex: 1; }
+  .seek .bar { flex: 1; position: relative; display: flex; align-items: center; }
+  .seek .bar input { flex: 1; width: 100%; }
+  /* Markers that extensions place on the bar (e.g. loopyLoop's [ and ]) */
+  .seek .bar :global(> div) { top: -14px; color: var(--accent); font-size: 12px; font-weight: 700; transform: translateX(-50%); }
+  .ext-slot { display: flex; align-items: center; gap: 4px; }
+  .ext-slot:empty { display: none; }
+  .ext-slot :global(.xs-ext-btn) { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: var(--accent); }
+  .ext-slot :global(.xs-ext-btn:hover:not(:disabled)) { background: var(--hover); }
+  .ext-slot :global(.xs-ext-btn.active) { background: color-mix(in srgb, var(--accent) 20%, transparent); }
+  .ext-slot :global(.xs-ext-btn:disabled) { opacity: 0.35; cursor: default; }
 
   .right { display: flex; justify-content: flex-end; align-items: center; gap: 8px; }
   .right > input { width: 110px; }

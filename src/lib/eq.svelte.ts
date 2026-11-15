@@ -5,6 +5,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { errMsg } from "./api";
 import { player, toast } from "./state.svelte";
+import { plan } from "./plan.svelte";
 
 export const BANDS = ["31", "62", "125", "250", "500", "1k", "2k", "4k", "8k", "16k"];
 
@@ -38,6 +39,7 @@ function store(key: string, value: string) {
 
 /** Ask Spotify's player frame to send its audio to `label` ("" = normal speakers). */
 function routePlayer(label: string): Promise<void> {
+  if (plan.isFree) return Promise.resolve(); // Free mode: no Spotify player in XSTIFY (Local Files only)
   const frame = document.querySelector<HTMLIFrameElement>(`iframe[src^="${PLAYER_ORIGIN}"]`);
   if (!frame?.contentWindow) return Promise.reject("Play a song first, then turn on the equalizer.");
   const id = Math.random().toString(36).slice(2);

@@ -2,6 +2,7 @@
   import { fmt, img, type Track } from "./api";
   import { nav, player } from "./state.svelte";
   import Icon from "./Icon.svelte";
+  import { ext } from "./spicetify.svelte";
 
   let {
     tracks,
@@ -29,6 +30,7 @@
       title="Click to play"
       onclick={() => (active ? player.toggle() : player.playList(tracks, i))}
       onkeydown={(e) => e.key === "Enter" && player.playList(tracks, i)}
+      oncontextmenu={(e) => ext.openContextMenu(e, [t.uri])}
     >
       <span class="num">
         <span class="n">{#if active && player.playing}<Icon name="music" size={16} />{:else if numbered}{i + 1}{:else}<Icon name="play" size={16} />{/if}</span>
@@ -39,7 +41,7 @@
         <div class="text">
           <div class="name">{t.name}{#if t.explicit}<span class="e">E</span>{/if}</div>
           <div class="sub">
-            {#each t.artists as a, j}{#if a.id}<button class="link" onclick={(e) => { e.stopPropagation(); nav.go({ name: "artist", id: a.id }); }}>{a.name}</button>{:else}{a.name}{/if}{#if j < t.artists.length - 1}, {/if}{/each}
+            {#each t.artists as a, j}{#if a.id}<button class="link" onclick={(e) => { e.stopPropagation(); nav.go({ name: "artist", id: a.id }); }} oncontextmenu={(e) => { e.stopPropagation(); ext.openContextMenu(e, [`spotify:artist:${a.id}`]); }}>{a.name}</button>{:else}{a.name}{/if}{#if j < t.artists.length - 1}, {/if}{/each}
           </div>
         </div>
       </div>

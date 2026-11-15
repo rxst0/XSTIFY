@@ -1,5 +1,6 @@
 mod auth;
 mod eq;
+mod ext;
 mod local;
 mod media;
 
@@ -88,6 +89,7 @@ async fn api_send(state: State<'_, AppState>, method: String, path: String, body
     let method = match method.as_str() {
         "PUT" => reqwest::Method::PUT,
         "POST" => reqwest::Method::POST,
+        "DELETE" => reqwest::Method::DELETE,
         _ => return Err("Unsupported method".into()),
     };
     api_call(&state, method, path, body).await
@@ -177,6 +179,36 @@ fn allow_player_mic(window: &tauri::WebviewWindow) {
     });
 }
 
+/// Free mode: open (or reuse) a window with Spotify's official web player at `url`.
+/// The window gets no access to XSTIFY's commands (it isn't in any capability).
+#[tauri::command]
+fn open_web_player(app: tauri::AppHandle, url: String) -> Result<(), String> {
+    use tauri::Manager;
+    const LABEL: &str = "spotify-web";
+    let parsed: tauri::Url = url.parse().map_err(|_| "Invalid link".to_string())?;
+    if parsed.scheme() != "https" || parsed.host_str() != Some("open.spotify.com") {
+        return Err("Only Spotify's web player can be opened.".into());
+    }
+    if let Some(w) = app.get_webview_window(LABEL) {
+        w.navigate(parsed).map_err(|e| e.to_string())?;
+        let _ = w.unminimize();
+        let _ = w.set_focus();
+        return Ok(());
+    }
+    // Must match the main window's browser arguments, or WebView2 refuses to start
+    // a second window that shares the same profile.
+    let args = app.config().app.windows[0].additional_browser_args.clone().unwrap_or_default();
+    let mut b = tauri::WebviewWindowBuilder::new(&app, LABEL, tauri::WebviewUrl::External(parsed))
+        .title("Spotify Web Player · XSTIFY")
+        .inner_size(1100.0, 760.0)
+        .min_inner_size(720.0, 500.0);
+    if !args.is_empty() {
+        b = b.additional_browser_args(&args);
+    }
+    b.build().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("xstify_lib=info")).init();
@@ -200,10 +232,11 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            status, login, cancel_login, logout, access_token, api_get, api_send,
+            status, login, cancel_login, logout, access_token, api_get, api_send, open_web_player,
             media::media_track, media::media_state,
             eq::eq_status, eq::eq_start, eq::eq_gains, eq::eq_stop,
-            local::local_list, local::local_add, local::local_remove
+            local::local_list, local::local_add, local::local_remove,
+            ext::ext_list, ext::ext_add, ext::ext_remove, ext::ext_set_enabled, ext::ext_code
         ])
         .run(tauri::generate_context!())
         .expect("error while running XSTIFY");

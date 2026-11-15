@@ -1,9 +1,13 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import { onMount } from "svelte";
-  import { errMsg } from "$lib/api";
+  import { errMsg, get } from "$lib/api";
+  import { plan } from "$lib/plan.svelte";
+  import AccountChoice from "$lib/AccountChoice.svelte";
   import { nav, player, toast } from "$lib/state.svelte";
   import { eq } from "$lib/eq.svelte";
+  import { loadExtensions } from "$lib/spicetify.svelte";
+  import ExtOverlays from "$lib/ExtOverlays.svelte";
   import Login from "$lib/Login.svelte";
   import Sidebar from "$lib/Sidebar.svelte";
   import PlayerBar from "$lib/PlayerBar.svelte";
@@ -15,7 +19,7 @@
   import Settings from "$lib/views/Settings.svelte";
   import LocalFiles from "$lib/views/LocalFiles.svelte";
 
-  type Phase = "starting" | "login" | "ready";
+  type Phase = "starting" | "choose" | "login" | "ready";
   let phase = $state<Phase>("starting");
   let needsClientId = $state(true);
   let busy = $state(false);
@@ -23,20 +27,43 @@
   let searchEl = $state<HTMLInputElement>();
   let main: HTMLElement | undefined = $state();
 
-  onMount(async () => {
+  onMount(start);
+
+  async function start() {
+    // First launch: ask which Spotify account they have.
+    if (!plan.value) {
+      phase = "choose";
+      return;
+    }
     const s = await invoke<{ has_client_id: boolean; has_saved_login: boolean }>("status");
     needsClientId = !s.has_client_id;
     if (s.has_client_id && s.has_saved_login) await login();
     else phase = "login";
-  });
+  }
+
+  /** Compare the chosen mode with the account type Spotify reports. */
+  async function checkPlan() {
+    try {
+      const me = await get<{ product?: string }>("/me");
+      plan.product = me.product ?? null;
+      if (!plan.isFree && plan.product && plan.product !== "premium") {
+        plan.set("free");
+        toast.show("Your Spotify account is Free, so XSTIFY switched to Free mode. You can change this in Settings.");
+      }
+    } catch {}
+  }
 
   async function login(clientId?: string) {
     busy = true;
     error = "";
     try {
       await invoke("login", { clientId: clientId ?? null });
-      await player.init();
+      await checkPlan();
+      // Premium: Spotify's in-app player. Free: songs open in Spotify's web player instead.
+      if (plan.isFree) player.initLocalOnly();
+      else await player.init();
       eq.restore();
+      loadExtensions(); // Spicetify-compatible extensions (Settings → Extensions)
       phase = "ready";
     } catch (e) {
       error = errMsg(e);
@@ -73,6 +100,8 @@
 
 {#if phase === "starting"}
   <div class="splash">XSTIFY</div>
+{:else if phase === "choose"}
+  <AccountChoice onchosen={start} />
 {:else if phase === "login"}
   <Login {needsClientId} {busy} {error} onlogin={login} />
 {:else}
@@ -101,6 +130,8 @@
     <div class="bar"><PlayerBar /></div>
   </div>
 {/if}
+
+<ExtOverlays />
 
 {#if toast.msg}<div class="toast" role="status">{toast.msg}</div>{/if}
 

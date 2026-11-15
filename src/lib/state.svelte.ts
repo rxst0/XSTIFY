@@ -1,6 +1,7 @@
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { errMsg, img, type Track } from "./api";
+import { plan } from "./plan.svelte";
 
 // ---------- Navigation ----------
 
@@ -109,6 +110,9 @@ class Player {
   #deviceId = "";
   #ready: Promise<void> | undefined;
 
+  /** Songs seen in lists, by URI (Spotify's player omits details like "explicit"). */
+  known = new Map<string, Track>();
+
   #audio: HTMLAudioElement | undefined;
   #localQueue: Track[] = [];
   #localIndex = 0;
@@ -123,13 +127,26 @@ class Player {
     return this.#ready;
   }
 
-  async #connect() {
+  #basicsDone = false;
+  /** Seek-bar ticking and media keys: needed in both Premium and Free mode. */
+  #basics() {
+    if (this.#basicsDone) return;
+    this.#basicsDone = true;
     // Advance the seek bar locally; the SDK only reports position on changes.
     setInterval(() => {
       if (!this.local && this.playing && this.current)
         this.position = Math.min(this.position + 500, this.current.duration_ms);
     }, 500);
     this.#registerMediaKeys();
+  }
+
+  /** Free mode: no Spotify player inside XSTIFY (Local Files still play here). */
+  initLocalOnly() {
+    this.#basics();
+  }
+
+  async #connect() {
+    this.#basics();
     await loadSdk();
     const sdk = new window.Spotify.Player({
       name: "XSTIFY",
@@ -169,7 +186,8 @@ class Player {
     const t = s.track_window?.current_track;
     if (t) {
       const changed = this.current?.uri !== t.uri;
-      this.current = fromSdk(t);
+      const k = this.known.get(t.uri);
+      this.current = { ...fromSdk(t), explicit: k?.explicit };
       if (changed) this.#publishNowPlaying();
     }
     this.position = s.position ?? 0;
@@ -304,6 +322,7 @@ class Player {
 
   /** Play `tracks[i]`, queueing the surrounding list so next/previous work. */
   async playList(tracks: Track[], i: number) {
+    for (const t of tracks) this.known.set(t.uri, t);
     if (tracks[i]?.uri.startsWith("local:")) {
       // Pause Spotify only if it's actually playing (pausing an empty player raises an error).
       if (!this.local && this.playing) this.#sdk?.pause().catch(() => {});
@@ -311,6 +330,12 @@ class Player {
       this.#localQueue = tracks.filter((t) => t.uri.startsWith("local:"));
       this.#localIndex = Math.max(0, this.#localQueue.indexOf(tracks[i]));
       this.#playLocal();
+      return;
+    }
+    if (plan.isFree) {
+      // Free accounts can't stream in other apps: hand the song to Spotify's web player.
+      if (this.local && this.playing) this.#audio?.pause();
+      plan.openWeb(tracks[i].uri).catch((e) => toast.show(e));
       return;
     }
     if (this.local) {

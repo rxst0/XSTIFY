@@ -71,6 +71,31 @@ export function applyTheme({ main, accent }: Theme) {
     "--accent": accent,
     "--on-accent": luminance(accent) > 0.35 ? "#000000" : "#ffffff",
   };
+  // The same colors under Spicetify's names (--spice-*), so extensions can read the theme.
+  const spice: Record<string, string> = {
+    main: main,
+    sidebar: vars["--surface"],
+    player: main,
+    card: vars["--surface-2"],
+    shadow: "#000000",
+    "selected-row": vars["--muted"],
+    text: text,
+    subtext: vars["--muted"],
+    button: accent,
+    "button-active": accent,
+    "button-disabled": vars["--surface-3"],
+    "tab-active": vars["--surface-2"],
+    notification: vars["--surface-2"],
+    "notification-error": "#e22134",
+    misc: vars["--surface-3"],
+    highlight: vars["--hover"],
+    "highlight-elevated": vars["--surface-2"],
+  };
+  for (const [name, color] of Object.entries(spice)) {
+    vars[`--spice-${name}`] = color;
+    vars[`--spice-rgb-${name}`] = rgb(color).join(",");
+  }
+
   const root = document.documentElement;
   for (const [k, v] of Object.entries(vars)) root.style.setProperty(k, v);
   root.style.colorScheme = light ? "light" : "dark";
